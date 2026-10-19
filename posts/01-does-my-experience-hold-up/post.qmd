@@ -1,0 +1,206 @@
+---
+title: "Does my experience hold up?"
+format:
+  gfm:
+    output-file: README.md
+  html:
+    output-file: index.html
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("../../R/setup.R")
+source("../../R/theme.R")
+```
+
+```{r}
+#| label: check
+#| include: false
+# Matches the site before anything else: 447, 30.93, 15.45, 17.56, 84.
+c(
+  non_scheduled_orders = sum(orders$scheduled == 0),
+  median_order_time    = median(orders$order_time[orders$scheduled == 0]),
+  median_wait          = median(waits$minutes),
+  median_saturday_wait = median(waits$minutes[waits$weekday == "Sat"]),
+  shifts               = nrow(shifts)
+)
+```
+
+::: {.callout-tip}
+## The short version
+I believed weekends were easier and late nights were slower. Two months of my own data supports neither.
+:::
+
+## What I thought I knew
+
+After two months of delivering, I had a few beliefs about when the waits are long.
+
+Weekends should be easier. More people order in, so the next order should come sooner. On weekdays I usually stop around 8 pm, but on weekends I keep going a little later, because it feels busier.
+
+And the later it gets, the longer I wait.
+
+Then I looked at my own data, and the first thing it showed me was that Saturday had the longest waits of the week.
+
+So which is it?
+
+## What I mean by a wait
+
+A wait is the time with no order in my car: from my last drop-off to the next pickup. If I carry two orders at once, the time between them doesn't count. I'm still working.
+
+It's not how long the customer waits, and it's not how long the store takes. It's how long I sit there.
+
+## Looking at the numbers
+
+```{r}
+#| label: waits-by-day
+waits |>
+  mutate(weekday = factor(weekday, levels = c("Mon","Tue","Wed","Thu","Fri","Sat","Sun")),
+         saturday = weekday == "Sat") |>
+  ggplot(aes(weekday, minutes, fill = saturday)) +
+  geom_boxplot(colour = rv[["muted"]], outlier.colour = rv[["muted"]], width = 0.6) +
+  # Held back, as the site draws a day that leans slower but is not clearly so.
+  scale_fill_manual(values = c(`TRUE` = scales::alpha(rv[["amber"]], 0.45), `FALSE` = rv[["grey"]]), guide = "none") +
+  labs(x = NULL, y = "Minutes waiting")
+```
+
+```{r}
+#| label: saturday-gap
+#| include: false
+sat_waits  <- waits[waits$weekday == "Sat", ]
+oth_waits  <- waits[waits$weekday != "Sat", ]
+observed   <- median(sat_waits$minutes) - median(oth_waits$minutes)
+sat_by_day <- split(sat_waits$minutes, sat_waits$day)
+```
+
+My median Saturday wait was `r round(median(sat_waits$minutes), 1)` minutes. Every other day together: `r round(median(oth_waits$minutes), 1)`. Saturday is about `r round(median(sat_waits$minutes), 1) - round(median(oth_waits$minutes), 1)` minutes slower.
+
+But that's two months, and only `r length(sat_by_day)` Saturdays. How sure can I be about that `r round(median(sat_waits$minutes), 1) - round(median(oth_waits$minutes), 1)`?
+
+## Bootstrap: rebuilding the two months
+
+I can't drive the same two months twice. What I can do is rebuild them from the data I already have, and see how much the answer changes.
+
+The idea is simple. Take my real data, draw from it at random with replacement, and build a new "two months" of the same size. Some days show up twice, some not at all. Work out the Saturday median again. Do that 10,000 times.
+
+This doesn't predict anything. It tells me how much my number moves when the luck changes. If it barely moves, I can trust it. If it swings all over, I can't.
+
+## What do you draw?
+
+Here's the part that surprised me. It matters *what* you draw.
+
+If I draw single waits, I treat my `r nrow(sat_waits)` Saturday waits as `r nrow(sat_waits)` separate pieces of evidence. But they aren't. Waits on the same day share the same weather, the same traffic, the same luck. A slow Saturday is slow all day.
+
+So I tried both: drawing one wait at a time, and drawing one whole Saturday at a time.
+
+```{r}
+#| label: saturday-both-ways
+#| fig-height: 2.2
+set.seed(1)
+boot_by_wait <- replicate(10000,
+  median(sample(sat_waits$minutes, replace = TRUE))
+)
+
+set.seed(1)
+boot_by_day <- replicate(10000,
+  median(unlist(sample(sat_by_day, length(sat_by_day), replace = TRUE)))
+)
+
+range_by_wait <- quantile(boot_by_wait, c(0.025, 0.975))
+range_by_day  <- quantile(boot_by_day,  c(0.025, 0.975))
+
+tibble(
+  drawn = factor(c("One wait at a time", "One Saturday at a time"),
+                 levels = c("One Saturday at a time", "One wait at a time")),
+  lo = c(range_by_wait[1], range_by_day[1]),
+  hi = c(range_by_wait[2], range_by_day[2])
+) |>
+  ggplot(aes(y = drawn, colour = drawn)) +
+  geom_linerange(aes(xmin = lo, xmax = hi), linewidth = 3) +
+  geom_point(aes(x = median(sat_waits$minutes)), size = 3, colour = rv[["ink"]]) +
+  scale_colour_manual(values = c(`One Saturday at a time` = rv[["blue"]], `One wait at a time` = rv[["grey"]]), guide = "none") +
+  labs(x = "Where the Saturday median lands, 95% of the time (minutes)", y = NULL)
+```
+
+Drawing single waits, the Saturday median lands between `r round(range_by_wait[1], 1)` and `r round(range_by_wait[2], 1)` minutes, 95% of the time. Drawing whole Saturdays, it's `r round(range_by_day[1], 1)` to `r round(range_by_day[2], 1)`.
+
+Same data. A much wider range. Drawing single waits made me more sure than I should be. From here on, I draw whole days.
+
+## Saturday against the rest
+
+```{r}
+#| label: saturday-vs-rest
+median_by_day <- function(rows) {
+  by_day <- split(rows$minutes, rows$day)
+  median(unlist(sample(by_day, length(by_day), replace = TRUE)))
+}
+
+set.seed(1)
+diff_saturday <- replicate(10000,
+  median_by_day(sat_waits) - median_by_day(oth_waits)
+)
+share_saturday <- mean(diff_saturday > 0)
+range_saturday <- quantile(diff_saturday, c(0.025, 0.975))
+```
+
+Rebuild my two months 10,000 times, and Saturday comes out slower in `r round(100 * share_saturday)` of every 100.
+
+That sounds convincing. But the range runs from `r round(range_saturday[1], 1)` to `r round(range_saturday[2], 1)` minutes, and it crosses zero. Saturday could be a lot slower, or a little faster.
+
+::: {.callout-warning}
+## A catch
+I only looked at Saturday *because* it was the highest of the seven days. Out of seven days, one will always come out on top, even if they're all the same. Pick the winner after the race and it will look better than it is.
+:::
+
+## My actual beliefs
+
+So let me test what I really believed, set up before looking: weekends against weekdays, and after 8 pm against earlier. The 8 pm line comes from my own habit, not from the data.
+
+```{r}
+#| label: weekend-and-late
+weekend_waits <- waits[waits$weekday %in% c("Sat", "Sun"), ]
+weekday_waits <- waits[!waits$weekday %in% c("Sat", "Sun"), ]
+
+set.seed(1)
+diff_weekend <- replicate(10000,
+  median_by_day(weekend_waits) - median_by_day(weekday_waits)
+)
+
+# Late and earlier waits share the same days, so draw the days once for both.
+is_late <- function(h) h >= 20 | h < 5
+waits_by_day <- split(waits, waits$day)
+late_minus_earlier <- function(rows) {
+  median(rows$minutes[is_late(rows$hour)]) - median(rows$minutes[!is_late(rows$hour)])
+}
+
+set.seed(1)
+diff_late <- replicate(10000, {
+  picked <- sample(waits_by_day, length(waits_by_day), replace = TRUE)
+  late_minus_earlier(do.call(rbind, picked))
+})
+
+share_weekend <- mean(diff_weekend > 0)
+share_late    <- mean(diff_late > 0)
+```
+
+50 means a coin flip. Far above 50 means slower; far below means faster.
+
+| Belief | Out of 100 rebuilds, slower in |
+|---|---|
+| Saturday is slower | `r round(100 * share_saturday)` |
+| Weekends are slower than weekdays | `r round(100 * share_weekend)` |
+| After 8 pm is slower than earlier | `r round(100 * share_late)` |
+
+Weekends and weekdays come out about even. Late nights are, if anything, a little *shorter*.
+
+## So did it hold up?
+
+Not really.
+
+Weekends weren't easier, or harder. They were about the same. Late nights weren't worse. And Saturday, the one day that looked slow, was the one I picked because it looked slow. Average it with Sunday, and weekends look like every other day.
+
+What I think happened: a few long nights stuck with me. The ordinary ones didn't.
+
+Two months is not much, and `r length(sat_by_day)` Saturdays is not much. None of this proves the days are all the same. It just says my data can't tell them apart yet, and that the beliefs I'd built from driving were stronger than the evidence behind them.
+
+> Bootstrap didn't give me an answer. It told me how much I didn't know.
