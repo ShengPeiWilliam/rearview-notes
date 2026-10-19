@@ -19,3 +19,6 @@ R/setup.R
 
 /.quarto/
 **/*.quarto_ipynb
+
+# The five tables, copied in from minutes-per-order. Never pushed.
+data/
