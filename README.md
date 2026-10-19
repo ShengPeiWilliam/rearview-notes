@@ -6,7 +6,7 @@ Things I believed while delivering, checked against my own data.
 
 | # | The hunch | What my data said | The idea |
 |---|---|---|---|
-| 1 | Weekends are easier, late nights are slower. ([post](posts/01-does-my-experience-hold-up/)) | Neither holds up. Weekends wait about the same, late nights a little less. | Bootstrap, and what to resample |
+| 1 | Weekends are easier, late nights are slower. ([post](posts/01-does-my-experience-hold-up/)) | Neither holds up. Two months can't tell weekends from weekdays, or late nights from earlier. | Bootstrap, and what to resample |
 
 The data is my own DoorDash export, two months in one area, and is not published here. Each post is a folder with its code and figures.
 
