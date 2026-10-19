@@ -59,9 +59,10 @@ waits |>
          saturday = weekday == "Sat") |>
   ggplot(aes(weekday, minutes, fill = saturday)) +
   geom_boxplot(colour = rv[["muted"]], outlier.colour = rv[["muted"]], width = 0.6) +
-  # Held back, as the site draws a day that leans slower but is not clearly so.
+  # Saturday is tinted, but only faintly: it looks slower without being clearly so.
   scale_fill_manual(values = c(`TRUE` = scales::alpha(rv[["amber"]], 0.45), `FALSE` = rv[["grey"]]), guide = "none") +
-  labs(x = NULL, y = "Minutes waiting")
+  labs(x = NULL, y = "Minutes waiting",
+       caption = "How much waits vary within each weekday. Not how sure the medians are.")
 ```
 
 ```{r}
@@ -70,11 +71,13 @@ waits |>
 sat_waits  <- waits[waits$weekday == "Sat", ]
 oth_waits  <- waits[waits$weekday != "Sat", ]
 sat_by_day <- split(sat_waits$minutes, sat_waits$day)
+# The gap as a reader can check it: the two medians as shown, subtracted.
+gap_shown  <- round(median(sat_waits$minutes), 1) - round(median(oth_waits$minutes), 1)
 ```
 
-My median Saturday wait was `r round(median(sat_waits$minutes), 1)` minutes. Every other day together: `r round(median(oth_waits$minutes), 1)`. Saturday is about `r round(median(sat_waits$minutes), 1) - round(median(oth_waits$minutes), 1)` minutes slower.
+My median Saturday wait was `r round(median(sat_waits$minutes), 1)` minutes. Every other day together: `r round(median(oth_waits$minutes), 1)`. Saturday is about `r round(gap_shown, 1)` minutes slower.
 
-But that's two months, and only `r length(sat_by_day)` Saturdays. How sure can I be about that `r round(median(sat_waits$minutes), 1) - round(median(oth_waits$minutes), 1)`?
+But that's two months, and only `r length(sat_by_day)` Saturdays. How sure can I be about that `r round(gap_shown, 1)`?
 
 ## Bootstrap: rebuilding the two months
 

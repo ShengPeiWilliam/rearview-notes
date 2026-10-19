@@ -44,9 +44,10 @@ waits |>
          saturday = weekday == "Sat") |>
   ggplot(aes(weekday, minutes, fill = saturday)) +
   geom_boxplot(colour = rv[["muted"]], outlier.colour = rv[["muted"]], width = 0.6) +
-  # Held back, as the site draws a day that leans slower but is not clearly so.
+  # Saturday is tinted, but only faintly: it looks slower without being clearly so.
   scale_fill_manual(values = c(`TRUE` = scales::alpha(rv[["amber"]], 0.45), `FALSE` = rv[["grey"]]), guide = "none") +
-  labs(x = NULL, y = "Minutes waiting")
+  labs(x = NULL, y = "Minutes waiting",
+       caption = "How much waits vary within each weekday. Not how sure the medians are.")
 ```
 
 </details>
@@ -77,7 +78,7 @@ over, I can’t.
 
 Here’s the part that surprised me. It matters *what* you draw.
 
-If I draw single waits, I treat my 40 Saturday waits as 40 separate
+If I draw single waits, I treat my 42 Saturday waits as 42 separate
 pieces of evidence. But they aren’t. Waits on the same day share the
 same weather, the same traffic, the same luck. A slow Saturday is slow
 all day.
@@ -119,8 +120,8 @@ tibble(
 
 ![](post_files/figure-commonmark/saturday-both-ways-1.png)
 
-Drawing single waits, the Saturday median lands between 12.2 and 19.9
-minutes, 95% of the time. Drawing whole Saturdays, it’s 12.3 to 24.1.
+Drawing single waits, the Saturday median lands between 13.5 and 19.9
+minutes, 95% of the time. Drawing whole Saturdays, it’s 14.3 to 24.1.
 
 Same data. A much wider range. Drawing single waits made me more sure
 than I should be. From here on, I draw whole days.
@@ -146,10 +147,10 @@ range_saturday <- quantile(diff_saturday, c(0.025, 0.975))
 
 </details>
 
-Rebuild my two months 10,000 times, and Saturday comes out slower in 91
+Rebuild my two months 10,000 times, and Saturday comes out slower in 92
 of every 100.
 
-That sounds convincing. But the range runs from -2.3 to 9.7 minutes, and
+That sounds convincing. But the range runs from -1.3 to 9.5 minutes, and
 it crosses zero. Saturday could be a lot slower, or a little faster.
 
 > [!WARNING]
@@ -207,7 +208,7 @@ slower; far below, most come out faster.
 
 | Belief                            | Out of 100 rebuilds, slower in |
 |-----------------------------------|--------------------------------|
-| Saturday is slower                | 91                             |
+| Saturday is slower                | 92                             |
 | Weekends are slower than weekdays | 45                             |
 | After 8 pm is slower than earlier | 28                             |
 
