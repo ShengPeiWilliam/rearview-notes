@@ -23,7 +23,10 @@ stopifnot(
   abs(median(orders$order_time[orders$scheduled == 0]) - 30.93) < 0.01,
   abs(median(waits$minutes) - 15.45) < 0.01,
   abs(median(waits$minutes[waits$weekday == "Sat"]) - 17.56) < 0.01,
-  nrow(shifts) == 84
+  nrow(shifts) == 84,
+  # Quoted outside the post too (the LinkedIn note): 15 weekend days, 8 of them Saturdays.
+  length(unique(waits$day[waits$weekday %in% c("Sat", "Sun")])) == 15,
+  length(unique(waits$day[waits$weekday == "Sat"])) == 8
 )
 ```
 
