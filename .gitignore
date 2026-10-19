@@ -1,26 +1,21 @@
-# RStudio
+# Private: the data, the notes, and the loader that points at them
+data/
+notes/
+R/setup.R
+*.csv
+*.json
+
+# Rendered files only the web version needs. Each post's index.html is kept: GitHub Pages serves it.
+*.html
+!posts/*/index.html
+**/*_files/libs/
+**/*_files/figure-html/
+
+# Tools
+/.quarto/
+**/*.quarto_ipynb
+*.Rproj
 .Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
-
-# Quarto
-.quarto/
-**/*_files/libs/
-
-# Never pushed: the real data, private notes, the table loader that points at them,
-# and the web version of each post (the HTML goes to minutes-per-order/deploy/blog instead)
-*.csv
-*.json
-notes/
-R/setup.R
-*.html
-# ...except each post's web version, which GitHub Pages serves. It holds the post, not the data.
-!posts/*/index.html
-**/*_files/figure-html/
-
-/.quarto/
-**/*.quarto_ipynb
-
-# The five tables, copied in from minutes-per-order. Never pushed.
-data/

@@ -8,7 +8,7 @@ suppressPackageStartupMessages({
   library(jsonlite)
 })
 
-root <- "~/UCI/projects/rearview-notes/data"
+root <- "data"   # run from the repo root:  Rscript R/build_tables.R
 raw  <- function(f) file.path(root, "raw", f)
 out  <- function(f) file.path(root, "processed", f)
 

@@ -1,12 +1,11 @@
-# Settings every post shares. Each post is posts/NN-name/post.qmd; its own header names its two outputs:
-# README.md, which GitHub shows when the folder is opened, and index.html for the site's blog (not committed).
+# Settings every post shares. Each post is posts/NN-name/post.qmd, rendered to one
+# self-contained index.html beside it, which GitHub Pages serves.
 format:
-  gfm:
-    code-fold: true
   html:
+    output-file: index.html
     code-fold: true
-    format-links: false   # no "Other Formats" link: the web version stands on its own
-    embed-resources: true # one self-contained index.html per post, for GitHub Pages
+    format-links: false
+    embed-resources: true
     fig-width: 7
     fig-height: 3.5
 
