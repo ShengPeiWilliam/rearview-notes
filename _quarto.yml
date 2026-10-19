@@ -6,6 +6,7 @@ format:
   html:
     code-fold: true
     format-links: false   # no "Other Formats" link: the web version stands on its own
+    embed-resources: true # one self-contained index.html per post, for GitHub Pages
     fig-width: 7
     fig-height: 3.5
 
