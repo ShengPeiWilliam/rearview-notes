@@ -1,0 +1,21 @@
+# RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Quarto
+.quarto/
+**/*_files/libs/
+
+# Never pushed: the real data, private notes, the table loader that points at them,
+# and the web version of each post (the HTML goes to minutes-per-order/deploy/blog instead)
+*.csv
+*.json
+notes/
+R/setup.R
+*.html
+**/*_files/figure-html/
+
+/.quarto/
+**/*.quarto_ipynb
