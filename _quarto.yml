@@ -1,0 +1,15 @@
+# Settings every post shares. Each post is posts/NN-name/post.qmd; its own header names its two outputs:
+# README.md, which GitHub shows when the folder is opened, and index.html for the site's blog (not committed).
+format:
+  gfm:
+    code-fold: true
+  html:
+    code-fold: true
+    format-links: false   # no "Other Formats" link: the web version stands on its own
+    fig-width: 7
+    fig-height: 3.5
+
+execute:
+  echo: true
+  warning: false
+  message: false
