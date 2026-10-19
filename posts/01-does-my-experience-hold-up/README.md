@@ -163,9 +163,11 @@ it crosses zero. Saturday could be a lot slower, or a little faster.
 
 ## My actual beliefs
 
-So let me test what I really believed, set up before looking: weekends
-against weekdays, and after 8 pm against earlier. The 8 pm line comes
-from my own habit, not from the data.
+So let me test what I really believed: weekends against weekdays, and
+after 8 pm against earlier. To be fair, the weekend test isn’t fully
+independent of what I’d already seen, since weekends include Saturday.
+The 8 pm line is the one that comes purely from my own habit, not from
+the data.
 
 <details class="code-fold">
 <summary>Code</summary>
@@ -191,6 +193,8 @@ diff_late <- replicate(10000, {
   picked <- sample(waits_by_day, length(waits_by_day), replace = TRUE)
   late_minus_earlier(do.call(rbind, picked))
 })
+# A rebuild with no late waits at all would give NA; stop if one ever does.
+stopifnot(!anyNA(diff_late))
 
 share_weekend <- mean(diff_weekend > 0)
 share_late    <- mean(diff_late > 0)
@@ -198,7 +202,8 @@ share_late    <- mean(diff_late > 0)
 
 </details>
 
-50 means a coin flip. Far above 50 means slower; far below means faster.
+50 means the rebuilds split evenly. Far above 50, most rebuilds come out
+slower; far below, most come out faster.
 
 | Belief                            | Out of 100 rebuilds, slower in |
 |-----------------------------------|--------------------------------|
@@ -206,17 +211,18 @@ share_late    <- mean(diff_late > 0)
 | Weekends are slower than weekdays | 45                             |
 | After 8 pm is slower than earlier | 28                             |
 
-Weekends and weekdays come out about even. Late nights are, if anything,
-a little *shorter*.
+Weekends and weekdays split about evenly. Late nights lean a little
+*shorter*, but not clearly.
 
 ## So did it hold up?
 
 Not really.
 
-Weekends weren’t easier, or harder. They were about the same. Late
-nights weren’t worse. And Saturday, the one day that looked slow, was
-the one I picked because it looked slow. Average it with Sunday, and
-weekends look like every other day.
+My data can’t tell weekends from weekdays, or late nights from earlier.
+Not that they’re the same: I can’t say either way, and I’d been carrying
+both beliefs as if I could. And Saturday, the one day that looked slow,
+was the one I picked because it looked slow. Put Sunday beside it, and
+the weekend gap all but disappears.
 
 What I think happened: a few long nights stuck with me. The ordinary
 ones didn’t.

@@ -17,13 +17,13 @@ source("../../R/theme.R")
 ```{r}
 #| label: check
 #| include: false
-# Matches the site before anything else: 447, 30.93, 15.45, 17.56, 84.
-c(
-  non_scheduled_orders = sum(orders$scheduled == 0),
-  median_order_time    = median(orders$order_time[orders$scheduled == 0]),
-  median_wait          = median(waits$minutes),
-  median_saturday_wait = median(waits$minutes[waits$weekday == "Sat"]),
-  shifts               = nrow(shifts)
+# The tables must still match the site; if the data has changed, stop here rather than print new numbers.
+stopifnot(
+  sum(orders$scheduled == 0) == 447,
+  abs(median(orders$order_time[orders$scheduled == 0]) - 30.93) < 0.01,
+  abs(median(waits$minutes) - 15.45) < 0.01,
+  abs(median(waits$minutes[waits$weekday == "Sat"]) - 17.56) < 0.01,
+  nrow(shifts) == 84
 )
 ```
 
@@ -69,7 +69,6 @@ waits |>
 #| include: false
 sat_waits  <- waits[waits$weekday == "Sat", ]
 oth_waits  <- waits[waits$weekday != "Sat", ]
-observed   <- median(sat_waits$minutes) - median(oth_waits$minutes)
 sat_by_day <- split(sat_waits$minutes, sat_waits$day)
 ```
 
@@ -154,7 +153,7 @@ I only looked at Saturday *because* it was the highest of the seven days. Out of
 
 ## My actual beliefs
 
-So let me test what I really believed, set up before looking: weekends against weekdays, and after 8 pm against earlier. The 8 pm line comes from my own habit, not from the data.
+So let me test what I really believed: weekends against weekdays, and after 8 pm against earlier. To be fair, the weekend test isn't fully independent of what I'd already seen, since weekends include Saturday. The 8 pm line is the one that comes purely from my own habit, not from the data.
 
 ```{r}
 #| label: weekend-and-late
@@ -178,12 +177,14 @@ diff_late <- replicate(10000, {
   picked <- sample(waits_by_day, length(waits_by_day), replace = TRUE)
   late_minus_earlier(do.call(rbind, picked))
 })
+# A rebuild with no late waits at all would give NA; stop if one ever does.
+stopifnot(!anyNA(diff_late))
 
 share_weekend <- mean(diff_weekend > 0)
 share_late    <- mean(diff_late > 0)
 ```
 
-50 means a coin flip. Far above 50 means slower; far below means faster.
+50 means the rebuilds split evenly. Far above 50, most rebuilds come out slower; far below, most come out faster.
 
 | Belief | Out of 100 rebuilds, slower in |
 |---|---|
@@ -191,13 +192,13 @@ share_late    <- mean(diff_late > 0)
 | Weekends are slower than weekdays | `r round(100 * share_weekend)` |
 | After 8 pm is slower than earlier | `r round(100 * share_late)` |
 
-Weekends and weekdays come out about even. Late nights are, if anything, a little *shorter*.
+Weekends and weekdays split about evenly. Late nights lean a little *shorter*, but not clearly.
 
 ## So did it hold up?
 
 Not really.
 
-Weekends weren't easier, or harder. They were about the same. Late nights weren't worse. And Saturday, the one day that looked slow, was the one I picked because it looked slow. Average it with Sunday, and weekends look like every other day.
+My data can't tell weekends from weekdays, or late nights from earlier. Not that they're the same: I can't say either way, and I'd been carrying both beliefs as if I could. And Saturday, the one day that looked slow, was the one I picked because it looked slow. Put Sunday beside it, and the weekend gap all but disappears.
 
 What I think happened: a few long nights stuck with me. The ordinary ones didn't.
 
