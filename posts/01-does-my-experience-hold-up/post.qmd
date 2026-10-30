@@ -48,6 +48,8 @@ A wait is the time with no order in my car: from my last drop-off to the next pi
 
 It's not how long the customer waits, and it's not how long the store takes. It's how long I sit there.
 
+Two kinds of wait never make it into the file: the one after my last order, before I went offline, and any wait over an hour, which reads as me taking a break. Both are probably the long ones, so my waits run a little short.
+
 ## Looking at the numbers
 
 ```{r}
@@ -195,6 +197,6 @@ What I think happened: a few long nights stuck with me. The ordinary ones didn't
 
 Two months is not much, and `r length(sat_by_day)` Saturdays is not much. None of this proves the days are all the same. It just says my data can't tell them apart yet, and that the beliefs I'd built from driving were stronger than the evidence behind them.
 
-And some waits never made it into the file at all: the one after my last order, before I went offline, and any wait over an hour, which reads as a break. Those are probably the long ones. If they fell more on some days than others, the comparison is missing a piece. That's the next note.
+The longest waits may also be the ones missing from the file, and they may not be missing evenly across days. That's the next note.
 
 > Bootstrap didn't give me an answer. It told me how much I didn't know.
