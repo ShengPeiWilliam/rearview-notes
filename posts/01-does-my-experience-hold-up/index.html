@@ -2278,15 +2278,8 @@ vertical-align: -.125em;
 </section>
 <section id="bootstrap-rebuilding-the-two-months" class="level2">
 <h2 class="anchored" data-anchor-id="bootstrap-rebuilding-the-two-months">Bootstrap: rebuilding the two months</h2>
-<p>I can’t drive the same two months twice. What I can do is rebuild them from the data I already have, and see how much the answer changes.</p>
-<p>The idea is simple. Take my real data, draw from it at random with replacement, and build a new “two months” of the same size. Some days show up twice, some not at all. Work out the Saturday median again. Do that 10,000 times.</p>
-<p>This doesn’t predict anything. It tells me how much my number moves when the luck changes. If it barely moves, I can trust it. If it swings all over, I can’t.</p>
-</section>
-<section id="what-do-you-draw" class="level2">
-<h2 class="anchored" data-anchor-id="what-do-you-draw">What do you draw?</h2>
-<p>Here’s the part that surprised me. It matters <em>what</em> you draw.</p>
-<p>If I draw single waits, I treat my 42 Saturday waits as 42 separate pieces of evidence. But they aren’t. Waits on the same day share the same weather, the same traffic, the same luck. A slow Saturday is slow all day.</p>
-<p>So I tried both: drawing one wait at a time, and drawing one whole Saturday at a time.</p>
+<p>I can’t drive the same two months twice, but I can rebuild them: draw from my own data at random, 10,000 times, and see how much the answer moves.</p>
+<p>The part that surprised me is that it matters <em>what</em> you draw. Draw single waits, and my 42 Saturday waits count as 42 separate pieces of evidence. But they aren’t. Waits on the same day share the same weather, the same traffic, the same luck. A slow Saturday is slow all day. So I tried both: one wait at a time, and one whole Saturday at a time.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -2424,6 +2417,7 @@ vertical-align: -.125em;
 <p>My data can’t tell weekends from weekdays, or late nights from earlier. Not that they’re the same: I can’t say either way, and I’d been carrying both beliefs as if I could. And Saturday, the one day that looked slow, was the one I picked because it looked slow. Put Sunday beside it, and the weekend gap all but disappears.</p>
 <p>What I think happened: a few long nights stuck with me. The ordinary ones didn’t.</p>
 <p>Two months is not much, and 8 Saturdays is not much. None of this proves the days are all the same. It just says my data can’t tell them apart yet, and that the beliefs I’d built from driving were stronger than the evidence behind them.</p>
+<p>And some waits never made it into the file at all: the one after my last order, before I went offline, and any wait over an hour, which reads as a break. Those are probably the long ones. If they fell more on some days than others, the comparison is missing a piece. That’s the next note.</p>
 <blockquote class="blockquote">
 <p>Bootstrap didn’t give me an answer. It told me how much I didn’t know.</p>
 </blockquote>

@@ -79,19 +79,9 @@ But that's two months, and only `r length(sat_by_day)` Saturdays. How sure can I
 
 ## Bootstrap: rebuilding the two months
 
-I can't drive the same two months twice. What I can do is rebuild them from the data I already have, and see how much the answer changes.
+I can't drive the same two months twice, but I can rebuild them: draw from my own data at random, 10,000 times, and see how much the answer moves.
 
-The idea is simple. Take my real data, draw from it at random with replacement, and build a new "two months" of the same size. Some days show up twice, some not at all. Work out the Saturday median again. Do that 10,000 times.
-
-This doesn't predict anything. It tells me how much my number moves when the luck changes. If it barely moves, I can trust it. If it swings all over, I can't.
-
-## What do you draw?
-
-Here's the part that surprised me. It matters *what* you draw.
-
-If I draw single waits, I treat my `r nrow(sat_waits)` Saturday waits as `r nrow(sat_waits)` separate pieces of evidence. But they aren't. Waits on the same day share the same weather, the same traffic, the same luck. A slow Saturday is slow all day.
-
-So I tried both: drawing one wait at a time, and drawing one whole Saturday at a time.
+The part that surprised me is that it matters *what* you draw. Draw single waits, and my `r nrow(sat_waits)` Saturday waits count as `r nrow(sat_waits)` separate pieces of evidence. But they aren't. Waits on the same day share the same weather, the same traffic, the same luck. A slow Saturday is slow all day. So I tried both: one wait at a time, and one whole Saturday at a time.
 
 ```{r}
 #| label: saturday-both-ways
@@ -204,5 +194,7 @@ My data can't tell weekends from weekdays, or late nights from earlier. Not that
 What I think happened: a few long nights stuck with me. The ordinary ones didn't.
 
 Two months is not much, and `r length(sat_by_day)` Saturdays is not much. None of this proves the days are all the same. It just says my data can't tell them apart yet, and that the beliefs I'd built from driving were stronger than the evidence behind them.
+
+And some waits never made it into the file at all: the one after my last order, before I went offline, and any wait over an hour, which reads as a break. Those are probably the long ones. If they fell more on some days than others, the comparison is missing a piece. That's the next note.
 
 > Bootstrap didn't give me an answer. It told me how much I didn't know.
