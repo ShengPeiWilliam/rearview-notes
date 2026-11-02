@@ -1,0 +1,204 @@
+---
+title: "Or was I just driving somewhere slow?"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("../../R/setup.R")
+source("../../R/theme.R")
+library(tibble)
+```
+
+```{r}
+#| label: check
+#| include: false
+stopifnot(
+  abs(median(waits$minutes) - 15.45) < 0.01,
+  abs(median(waits$minutes[waits$weekday == "Sat"]) - 17.56) < 0.01,
+  sum(waits$weekday == "Sat") == 42,
+  length(unique(waits$day[waits$weekday == "Sat"])) == 8
+)
+```
+
+```{r}
+#| label: slots
+#| include: false
+slot_of <- function(h) {
+  dplyr::case_when(
+    h < 11           ~ "Morning",
+    h >= 11 & h < 14 ~ "Lunch",
+    h >= 14 & h < 17 ~ "Afternoon",
+    h >= 17 & h < 20 ~ "Dinner",
+    TRUE             ~ "Late night"
+  )
+}
+
+waits <- waits |>
+  dplyr::mutate(
+    saturday = weekday == "Sat",
+    slot = factor(slot_of(hour),
+                  levels = c("Morning", "Lunch", "Afternoon", "Dinner", "Late night"))
+  )
+
+slot_dist <- waits |>
+  dplyr::mutate(group = ifelse(saturday, "Saturday", "Other days")) |>
+  dplyr::count(group, slot) |>
+  dplyr::group_by(group) |>
+  dplyr::mutate(pct = n / sum(n))
+
+pct <- function(g, s) slot_dist$pct[slot_dist$group == g & slot_dist$slot == s]
+
+sat_lunch <- pct("Saturday",   "Lunch")
+oth_lunch <- pct("Other days", "Lunch")
+sat_aftn  <- pct("Saturday",   "Afternoon")
+oth_aftn  <- pct("Other days", "Afternoon")
+
+sat_lunch_days  <- length(unique(waits$day[waits$saturday & waits$slot == "Lunch"]))
+sat_dinner_days <- length(unique(waits$day[waits$saturday & waits$slot == "Dinner"]))
+
+lunch_dinner_share <- mean(waits$slot %in% c("Lunch", "Dinner"))
+
+stopifnot(sat_lunch_days > 0, sat_dinner_days > 0)
+```
+
+::: {.callout-tip}
+## The short version
+Saturday waits run long at lunch, and nowhere else. By dinner, Saturday is just another day.
+:::
+
+## The day, the hour, or where?
+
+Last time, Saturday came out as the slowest day of my week: a median wait of `r round(median(waits$minutes[waits$saturday]), 1)` minutes against `r round(median(waits$minutes[!waits$saturday]), 1)` for every other day combined. (The full story is in the [last post](../01-does-my-experience-hold-up/).)
+
+But the thought kept nagging at me. My Saturdays don't run like my weekdays. I start later, I'm out at different hours. So maybe the slow number had little to do with Saturday itself, and more to do with *when*, or *where*, I happened to be on the road.
+
+I did consider where. The store names pin every pickup, so I know which corner of town my orders came from. But a wait runs from one drop-off to the next pickup, and across those minutes I'm usually driving between areas, not parked in one. Which area a wait belongs to isn't something the pickups can settle. So I started with the thing the file does pin down: the hour.
+
+## Saturday sits at different hours
+
+```{r}
+#| label: slot-distribution
+#| fig-height: 3.2
+slot_dist |>
+  ggplot(aes(slot, pct, fill = group)) +
+  geom_col(position = "dodge", width = 0.65) +
+  scale_x_discrete(labels = c(
+    "Morning"    = "Morning",
+    "Lunch"      = "Lunch\n11–14",
+    "Afternoon"  = "Afternoon",
+    "Dinner"     = "Dinner\n17–20",
+    "Late night" = "Late night"
+  )) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_manual(
+    values = c("Saturday" = rv[["amber"]], "Other days" = rv[["grey"]]),
+    name = NULL
+  ) +
+  labs(x = NULL, y = "Share of each group's waits")
+```
+
+On an ordinary day, `r round(100 * oth_lunch)`% of my waits land at lunch. On a Saturday, only `r round(100 * sat_lunch)`%. The afternoon flips it: `r round(100 * sat_aftn)`% of my Saturday waits fall there, against `r round(100 * oth_aftn)`% the rest of the week.
+
+That skew could be the whole story. If the longer waits happen to land in the slots where more of my Saturday time sits, my overall median would rise from the mix of hours alone, with nothing special about Saturday behind it. At this point I can't tell which it is.
+
+Lunch and dinner hold `r round(100 * lunch_dinner_share)`% of my waits between them, so they're where any real signal would be. I'll check all five slots anyway, and let the thin ones show up for what they are.
+
+## Holding the hour still
+
+```{r}
+#| label: bootstrap-slots
+#| include: false
+boot_slot_diff <- function(slot_name, seed = 1, n_boot = 10000) {
+  sat <- waits[waits$saturday & waits$slot == slot_name, ]
+  oth <- waits[!waits$saturday & waits$slot == slot_name, ]
+  sat_days <- split(sat$minutes, sat$day)
+  oth_days <- split(oth$minutes, oth$day)
+  set.seed(seed)
+  replicate(n_boot, {
+    s <- median(unlist(sample(sat_days, length(sat_days), replace = TRUE)))
+    o <- median(unlist(sample(oth_days, length(oth_days), replace = TRUE)))
+    s - o
+  })
+}
+
+median_by_day <- function(rows) {
+  by_day <- split(rows$minutes, rows$day)
+  median(unlist(sample(by_day, length(by_day), replace = TRUE)))
+}
+
+sat_all <- waits[waits$saturday, ]
+oth_all <- waits[!waits$saturday, ]
+set.seed(1)
+diff_overall <- replicate(10000, median_by_day(sat_all) - median_by_day(oth_all))
+
+slot_keys   <- c("Morning", "Lunch", "Afternoon", "Dinner", "Late night")
+slot_labels <- c("Morning", "Lunch (11–14)", "Afternoon", "Dinner (17–20)", "Late night")
+diffs <- setNames(lapply(slot_keys, boot_slot_diff), slot_keys)
+stopifnot(!vapply(diffs, function(d) all(is.na(d)), logical(1)))
+
+display_order <- c("Overall (post 1)", slot_labels)
+
+results <- tibble(
+  key   = c("Overall", slot_keys),
+  label = factor(display_order, levels = rev(display_order)),
+  lo    = c(quantile(diff_overall, 0.025), vapply(diffs, function(d) quantile(d, 0.025), numeric(1))),
+  hi    = c(quantile(diff_overall, 0.975), vapply(diffs, function(d) quantile(d, 0.975), numeric(1))),
+  med   = c(median(diff_overall),          vapply(diffs, median, numeric(1))),
+  share = c(mean(diff_overall > 0),        vapply(diffs, function(d) mean(d > 0), numeric(1)))
+)
+results$trust <- results$key %in% c("Lunch", "Dinner")
+
+rng <- function(k) paste0(round(results$lo[results$key == k], 1), " to ", round(results$hi[results$key == k], 1))
+shr <- function(k) round(100 * results$share[results$key == k])
+
+lunch_lo      <- round(results$lo[results$key == "Lunch"],  1)
+lunch_hi      <- round(results$hi[results$key == "Lunch"],  1)
+dinner_lo     <- round(results$lo[results$key == "Dinner"], 1)
+dinner_hi     <- round(results$hi[results$key == "Dinner"], 1)
+share_lunch   <- round(100 * results$share[results$key == "Lunch"])
+share_dinner  <- round(100 * results$share[results$key == "Dinner"])
+overall_share <- round(100 * results$share[results$key == "Overall"])
+```
+
+I ran the same bootstrap as [last time](../01-does-my-experience-hold-up/) inside each slot: pull whole days at random, ten thousand times, and watch where the Saturday-minus-everyone-else gap settles.
+
+::: {.callout-warning}
+## A limit worth keeping in mind
+Most rows lean on only a handful of Saturdays (lunch `r sat_lunch_days`, dinner `r sat_dinner_days`, the others fewer). The wide ranges below are the honest shape of that, not a flaw.
+:::
+
+```{r}
+#| label: plot-slots
+#| fig-height: 3.4
+ggplot(results, aes(y = label)) +
+  geom_linerange(aes(xmin = lo, xmax = hi, colour = trust), linewidth = 3) +
+  geom_point(aes(x = med), colour = rv[["ink"]], size = 2.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = rv[["muted"]]) +
+  scale_colour_manual(
+    values = c(`TRUE` = rv[["blue"]], `FALSE` = rv[["grey"]]),
+    guide = "none"
+  ) +
+  labs(x = "Saturday minus other days (minutes), 95% range", y = NULL)
+```
+
+| Comparison | 95% range (minutes) | Out of 100 rebuilds, Saturday slower |
+|---|---|---|
+| Overall (post 1) | `r rng("Overall")` | `r shr("Overall")` |
+| Morning | `r rng("Morning")` | `r shr("Morning")` |
+| Lunch (11–14) | `r rng("Lunch")` | `r shr("Lunch")` |
+| Afternoon | `r rng("Afternoon")` | `r shr("Afternoon")` |
+| Dinner (17–20) | `r rng("Dinner")` | `r shr("Dinner")` |
+| Late night | `r rng("Late night")` | `r shr("Late night")` |
+
+## What the numbers say
+
+Lunch is the clear one. All `r share_lunch` out of 100 rebuilds put Saturday ahead, the whole range above zero at `r lunch_lo` to `r lunch_hi` minutes. Hour for hour, my Saturday lunch waits really are longer.
+
+Nothing else lands. Dinner leans Saturday's way, `r share_dinner` out of 100, but its range crosses zero. Morning leans the opposite way, slower in only `r shr("Morning")` of 100, so it looks faster, yet its range (`r rng("Morning")`) crosses zero too. A lean one way isn't a finding while the range still covers both.
+
+So the slow Saturday median traces back to a single window. Lunch lifted it; the rest I can't separate from an ordinary day.
+
+## What I'd do with this
+
+It's a smaller claim than "Saturdays are slow," but a more useful one. If I'm setting a Saturday shift, noon is the window where I'd expect to sit idle between orders, so with any choice I'd start later.
