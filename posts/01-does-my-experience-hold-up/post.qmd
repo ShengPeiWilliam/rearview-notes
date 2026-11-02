@@ -61,8 +61,7 @@ waits |>
   geom_boxplot(colour = rv[["muted"]], outlier.colour = rv[["muted"]], width = 0.6) +
   # Saturday is tinted, but only faintly: it looks slower without being clearly so.
   scale_fill_manual(values = c(`TRUE` = scales::alpha(rv[["amber"]], 0.45), `FALSE` = rv[["grey"]]), guide = "none") +
-  labs(x = NULL, y = "Minutes waiting",
-       caption = "How much waits vary within each weekday. Not how sure the medians are.")
+  labs(x = NULL, y = "Minutes waiting")
 ```
 
 ```{r}
